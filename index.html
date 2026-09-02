@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Moneta" />
+<meta name="theme-color" content="#0F4C3A" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230F4C3A'/%3E%3Cstop offset='1' stop-color='%231FA07A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='34' font-family='Georgia,serif' font-size='40' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'%3EM%3C/text%3E%3C/svg%3E" />
+<title>Moneta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #F2F2F7;
+    --card: #FFFFFF;
+    --ink: #1a1a1a;
+    --secondary: rgba(60,60,67,0.6);
+    --tertiary: rgba(60,60,67,0.3);
+    --sep: rgba(60,60,67,0.18);
+    --blue: #007AFF;
+    --accent: #0F6B4F;
+    --red: #FF3B30;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); }
+  body {
+    font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    color: var(--ink); font-size: 16px; -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  #app {
+    height: var(--app-height, 100%);
+    display: flex; flex-direction: column;
+    padding-top: var(--safe-top);
+    position: relative; overflow: hidden;
+    transition: height 0.15s ease-out;
+  }
+
+  /* ---------- ナビバー ---------- */
+  .navbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 8px; min-height: 44px; position: relative;
+    background: rgba(242,242,247,0.92);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 0.5px solid var(--sep); z-index: 10; flex-shrink: 0;
+  }
+  .navbar .title {
+    font-size: 17px; font-weight: 600;
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; white-space: nowrap;
+    max-width: 60%; overflow: hidden; text-overflow: ellipsis;
+  }
+  .icon-btn {
+    width: 40px; min-width: 40px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); background: none; border: 0; cursor: pointer;
+    font-family: inherit; font-size: 16px;
+  }
+  .txt-btn {
+    height: 36px; padding: 0 10px; display: flex; align-items: center;
+    color: var(--accent); background: none; border: 0; cursor: pointer;
+    font-family: inherit; font-size: 16px; font-weight: 500; white-space: nowrap;
+  }
+  .txt-btn.strong { font-weight: 600; }
+  .txt-btn:disabled { color: var(--tertiary); }
+  .back-btn { display: flex; align-items: center; gap: 2px; padding-left: 2px; }
+
+  /* ---------- スクロール領域 ---------- */
+  .scroll {
+    flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain; padding: 14px 16px 28px;
+  }
+
+  /* ---------- 下部タブ ---------- */
+  .tabbar {
+    display: flex; flex-shrink: 0;
+    background: rgba(242,242,247,0.94);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 0.5px solid var(--sep);
+    padding-bottom: var(--safe-bottom);
+  }
+  .tabbar button {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: 0; padding: 8px 0 6px; cursor: pointer;
+    color: var(--tertiary); font-family: inherit; font-size: 10px; font-weight: 500;
+  }
+  .tabbar button.on { color: var(--accent); }
+  .tabbar svg { display: block; }
+
+  /* ---------- 券面 ---------- */
+  .cardface {
+    position: relative; border-radius: 14px; overflow: hidden;
+    aspect-ratio: 1.586 / 1;
+    background: linear-gradient(135deg, var(--c1) 0%, var(--c2) 100%);
+    color: var(--cink); padding: 14px 16px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.16), 0 1px 2px rgba(0,0,0,0.1);
+    border: 0.5px solid rgba(255,255,255,0.18);
+  }
+  .cardface::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(118deg, rgba(255,255,255,0) 34%, rgba(255,255,255,0.22) 47%, rgba(255,255,255,0) 58%);
+  }
+  .cf-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: relative; z-index: 1; }
+  .cf-issuer { font-size: 11px; font-weight: 500; opacity: 0.78; letter-spacing: 0.02em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cf-tag {
+    font-size: 9.5px; font-weight: 600; padding: 2.5px 7px; border-radius: 20px;
+    background: rgba(255,255,255,0.2); border: 0.5px solid rgba(255,255,255,0.3);
+    white-space: nowrap; backdrop-filter: blur(4px);
+  }
+  .cardface.light .cf-tag { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.12); }
+  .cf-mid { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; }
+  .cf-chip {
+    width: 30px; height: 23px; border-radius: 4px; flex-shrink: 0;
+    background: linear-gradient(140deg, #F0D68A 0%, #C9A227 48%, #EBD9A0 100%);
+    box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.18);
+    position: relative;
+  }
+  .cf-chip::before {
+    content: ''; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 0.5px;
+    background: rgba(0,0,0,0.22);
+  }
+  .cf-name { font-size: 15px; font-weight: 700; line-height: 1.25; letter-spacing: 0.01em;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cf-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; position: relative; z-index: 1; }
+  .cf-num { font-size: 12.5px; font-weight: 500; opacity: 0.85; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+  .cf-brand { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; font-style: italic; opacity: 0.95; white-space: nowrap; }
+  .cf-brand.plain { font-style: normal; font-weight: 600; font-size: 11.5px; letter-spacing: 0.02em; }
+
+  .card-tile { border: 0; padding: 0; background: none; width: 100%; display: block; cursor: pointer;
+    margin-bottom: 14px; transition: transform 0.12s ease; }
+  .card-tile:active { transform: scale(0.975); }
+  .card-tile.dim .cardface { opacity: 0.5; }
+  .tile-sub { display: flex; gap: 7px; align-items: flex-start; padding: 7px 4px 0;
+    font-size: 12.5px; color: var(--secondary); line-height: 1.55; text-align: left; }
+  .tile-sub .fav { color: #F2A33C; flex-shrink: 0; }
+
+  /* ---------- ひとこと・決め手 ---------- */
+  .tagline {
+    font-size: 17px; font-weight: 600; line-height: 1.6; text-align: center;
+    padding: 2px 10px 20px; white-space: pre-wrap;
+  }
+  .tagline.none { font-size: 14px; font-weight: 400; color: var(--tertiary); }
+  .bullet { display: flex; gap: 10px; padding: 11px 15px; border-bottom: 0.5px solid var(--sep);
+    font-size: 14.5px; line-height: 1.65; }
+  .bullet:last-child { border-bottom: 0; }
+  .bullet .mark { flex-shrink: 0; font-weight: 700; font-size: 13px; margin-top: 2px; }
+  .bullet .mark.good { color: #2E9E6B; }
+  .bullet .mark.warn { color: #E0921C; }
+
+  /* ---------- 折りたたみ（データ） ---------- */
+  details.data { background: var(--card); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  details.data > summary { list-style: none; padding: 13px 15px; text-align: center;
+    font-size: 14.5px; font-weight: 500; color: var(--accent); cursor: pointer; }
+  details.data > summary::-webkit-details-marker { display: none; }
+  details.data[open] > summary { border-bottom: 0.5px solid var(--sep); }
+  details.data > summary .lbl-c { display: none; }
+  details.data[open] > summary .lbl-o { display: none; }
+  details.data[open] > summary .lbl-c { display: inline; }
+
+  /* ---------- グループリスト ---------- */
+  .grp-title { font-size: 12.5px; font-weight: 600; color: var(--secondary);
+    padding: 0 4px 6px; margin-top: 20px; letter-spacing: 0.02em; }
+  .grp { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border-bottom: 0.5px solid var(--sep); min-height: 46px; }
+  .row:last-child { border-bottom: 0; }
+  .row .k { font-size: 14.5px; color: var(--secondary); flex-shrink: 0; }
+  .row .v { font-size: 15px; margin-left: auto; text-align: right; font-weight: 500; word-break: break-word; }
+  .row .v small { display: block; font-size: 11.5px; color: var(--secondary); font-weight: 400; margin-top: 1px; }
+  button.row { width: 100%; background: var(--card); border: 0; border-bottom: 0.5px solid var(--sep);
+    font-family: inherit; text-align: left; cursor: pointer; color: var(--ink); }
+  button.row:active { background: #EFEFF4; }
+  .chev { color: var(--tertiary); flex-shrink: 0; margin-left: -4px; }
+  .row.danger { justify-content: center; color: var(--red); font-weight: 500; }
+  .row.action { justify-content: center; color: var(--accent); font-weight: 500; }
+  .prose { background: var(--card); border-radius: 12px; padding: 13px 15px;
+    font-size: 14.5px; line-height: 1.72; white-space: pre-wrap; word-break: break-word;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .linkrow { display: flex; align-items: center; gap: 11px; }
+  .swatch-mini { width: 26px; height: 17px; border-radius: 3.5px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--c1), var(--c2)); border: 0.5px solid rgba(0,0,0,0.14); }
+
+  /* ---------- 打順（スタメン表） ---------- */
+  .seg.top { background: transparent; padding: 0 0 14px; }
+  .lu-panel { border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+    background: linear-gradient(165deg, #14432F 0%, #081711 100%);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22); }
+  .lu-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    padding: 13px 16px 11px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .lu-head b { font-size: 11.5px; font-weight: 700; letter-spacing: 0.2em; color: #F2C94C; }
+  .lu-head span { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.06em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lu-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 16px;
+    background: none; border: 0; border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    font-family: inherit; text-align: left; cursor: pointer; }
+  .lu-row:last-child { border-bottom: 0; }
+  .lu-row:active { background: rgba(255,255,255,0.07); }
+  .lu-no { font-size: 19px; font-weight: 700; color: #F2C94C; width: 28px; text-align: center;
+    font-variant-numeric: tabular-nums; flex-shrink: 0; letter-spacing: -0.02em; }
+  .lu-no small { font-size: 10px; font-weight: 500; }
+  .lu-no.none { color: rgba(255,255,255,0.22); font-size: 15px; font-weight: 400; }
+  .lu-pos { width: 27px; height: 27px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.45);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 11.5px; font-weight: 600; flex-shrink: 0; }
+  .lu-pos.empty { border-style: dashed; border-color: rgba(255,255,255,0.18); }
+  .lu-body { flex: 1; min-width: 0; }
+  .lu-name { display: block; font-size: 15px; font-weight: 600; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lu-sub { display: block; font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lu-bar { width: 5px; height: 30px; border-radius: 3px; flex-shrink: 0;
+    background: linear-gradient(160deg, var(--c1), var(--c2)); }
+  .lu-note { padding: 12px 16px; font-size: 11.5px; color: rgba(255,255,255,0.42); line-height: 1.6; }
+  .dh-toggle { margin-left: auto; border: 1px solid rgba(255,255,255,0.35); color: rgba(255,255,255,0.55);
+    background: none; border-radius: 20px; padding: 3px 10px; font-family: inherit;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; flex-shrink: 0; }
+  .dh-toggle.on { background: #F2C94C; color: #14432F; border-color: #F2C94C; }
+  .lu-head .team { flex: 1; text-align: right; }
+  .field-svg { width: 100%; display: block; }
+  .field-svg text { font-family: inherit; }
+  .fnode { cursor: pointer; }
+  .fnode:active circle:first-of-type { opacity: 0.8; }
+  .order-badge { display: block; width: fit-content; max-width: 100%; margin: 0 auto 12px;
+    padding: 5px 15px; border-radius: 20px; background: linear-gradient(150deg, #14432F, #0A2318);
+    color: #F2C94C; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; }
+
+  /* ---------- 能力（パワプロ風） ---------- */
+  .stat-board { display: flex; border-radius: 14px; padding: 11px 6px 9px; margin: 0 0 16px;
+    background: linear-gradient(165deg, #14432F 0%, #081711 100%); box-shadow: 0 4px 16px rgba(0,0,0,0.22); }
+  .stat { flex: 1; text-align: center; border-right: 1px solid rgba(255,255,255,0.08); }
+  .stat:last-child { border-right: 0; }
+  .stat-k { display: block; font-size: 10.5px; color: rgba(255,255,255,0.55); letter-spacing: 0.08em; margin-bottom: 1px; }
+  .stat-g { display: block; font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+  .stat-g.none { color: rgba(255,255,255,0.2); font-weight: 400; text-shadow: none; }
+  .lu-stats { display: flex; gap: 2px; flex-shrink: 0; }
+  .lu-stats b { width: 13px; text-align: center; font-size: 11.5px; font-weight: 800; }
+  .lu-stats b.none { color: rgba(255,255,255,0.2); font-weight: 400; }
+  .stat-edit { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px;
+    border-bottom: 0.5px solid var(--sep); background: var(--card); }
+  .stat-edit:last-child { border-bottom: 0; }
+  .stat-lbl { width: 36px; font-size: 14px; color: var(--secondary); flex-shrink: 0; }
+  .stat-seg { flex: 1; display: flex; gap: 3px; }
+  .stat-seg button { flex: 1; height: 32px; border-radius: 7px; border: 0.5px solid var(--sep);
+    background: #fff; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--tertiary);
+    padding: 0; cursor: pointer; }
+  .stat-seg button.on { background: var(--gc); border-color: var(--gc); color: #fff; }
+
+  /* ---------- 空状態 ---------- */
+  .empty { text-align: center; padding: 60px 30px; color: var(--tertiary); }
+  .empty p { font-size: 14px; margin-top: 12px; line-height: 1.7; }
+
+  /* ---------- フォーム ---------- */
+  .field { display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+    border-bottom: 0.5px solid var(--sep); min-height: 46px; background: var(--card); }
+  .field:last-child { border-bottom: 0; }
+  .field label { font-size: 14.5px; color: var(--secondary); flex-shrink: 0; width: 92px; }
+  .field input, .field select {
+    flex: 1; min-width: 0; border: 0; background: none; font-family: inherit;
+    font-size: 15.5px; color: var(--ink); text-align: right; -webkit-appearance: none; appearance: none;
+  }
+  .field select { text-align-last: right; padding-right: 2px; }
+  .field input:focus, .field select:focus { outline: none; }
+  .field .suffix { font-size: 14px; color: var(--secondary); flex-shrink: 0; }
+  .field.col { flex-direction: column; align-items: stretch; gap: 6px; padding: 11px 14px; }
+  .field.col label { width: auto; }
+  .field textarea {
+    border: 0; background: none; font-family: inherit; font-size: 15px; color: var(--ink);
+    resize: none; min-height: 88px; line-height: 1.68; width: 100%;
+  }
+  .field textarea:focus { outline: none; }
+  .swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 9px; padding: 13px 14px; background: var(--card); }
+  .sw { aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0;
+    background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15); }
+  .sw.on { border-color: var(--accent); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 2.5px rgba(0,0,0,0.12); }
+  .seg { display: flex; gap: 0; padding: 10px 14px; background: var(--card); }
+  .seg button {
+    flex: 1; padding: 8px 4px; border: 0.5px solid var(--sep); background: #fff;
+    font-family: inherit; font-size: 13.5px; color: var(--secondary); cursor: pointer;
+  }
+  .seg button:first-child { border-radius: 8px 0 0 8px; }
+  .seg button:last-child { border-radius: 0 8px 8px 0; }
+  .seg button.on { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .preview-wrap { padding: 4px 0 18px; }
+
+  /* ---------- レイヤー（プッシュ/モーダル） ---------- */
+  .layer {
+    position: absolute; inset: 0; top: 0; background: var(--bg);
+    display: flex; flex-direction: column;
+    padding-top: var(--safe-top); z-index: 40;
+    transform: translateX(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
+    visibility: hidden;
+  }
+  .layer.on { transform: translateX(0); visibility: visible; }
+  .layer.modal { transform: translateY(100%); z-index: 60; }
+  .layer.modal.on { transform: translateY(0); }
+  .layer .scroll { padding-bottom: calc(var(--safe-bottom) + 32px); }
+
+  /* ---------- 確認モーダル ---------- */
+  .sheet-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+    display: flex; align-items: center; justify-content: center; padding: 32px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .sheet-bg.on { opacity: 1; pointer-events: auto; }
+  .sheet {
+    background: #F7F7F9; border-radius: 15px; width: 100%; max-width: 290px; overflow: hidden;
+    transform: scale(0.9); transition: transform 0.22s cubic-bezier(.32,.72,0,1);
+  }
+  .sheet-bg.on .sheet { transform: scale(1); }
+  .sheet-body { padding: 20px 18px 16px; text-align: center; }
+  .sheet-body h3 { font-size: 16px; font-weight: 600; margin-bottom: 5px; }
+  .sheet-body p { font-size: 13px; color: var(--secondary); line-height: 1.6; }
+  .sheet-acts { display: flex; border-top: 0.5px solid var(--sep); }
+  .sheet-acts button {
+    flex: 1; padding: 13px; background: none; border: 0; border-right: 0.5px solid var(--sep);
+    font-family: inherit; font-size: 16px; color: var(--blue); cursor: pointer;
+  }
+  .sheet-acts button:last-child { border-right: 0; }
+  .sheet-acts button.danger { color: var(--red); font-weight: 600; }
+
+  /* ---------- トースト ---------- */
+  #toast {
+    position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 78px); z-index: 300;
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: rgba(28,28,30,0.94); color: #fff; padding: 10px 18px; border-radius: 22px;
+    font-size: 13.5px; font-weight: 500; transition: all 0.25s; white-space: nowrap;
+  }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- 更新バナー ---------- */
+  #updateBanner {
+    position: fixed; left: 12px; right: 12px;
+    bottom: calc(var(--safe-bottom) + 74px); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--accent); color: #fff; border: 0; border-radius: 14px;
+    padding: 14px 18px; font-family: inherit; font-size: 14px; font-weight: 600;
+    box-shadow: 0 8px 28px rgba(15,107,79,0.4); cursor: pointer;
+    transform: translateY(180%); transition: transform 0.35s cubic-bezier(.32,.72,0,1);
+  }
+  #updateBanner.show { transform: translateY(0); }
+  #updateBanner svg { display: block; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ========== メイン ========== -->
+  <div class="navbar">
+    <button class="icon-btn" id="btnSettings" aria-label="設定">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <span class="title" id="mainTitle">クレジットカード</span>
+    <button class="icon-btn" id="btnAdd" aria-label="追加">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <div class="scroll" id="listScroll"></div>
+
+  <div class="tabbar">
+    <button id="tabCard" class="on" data-tab="card">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+      <span>クレカ</span>
+    </button>
+    <button id="tabBank" data-tab="bank">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 10.5V19M9.7 10.5V19M14.3 10.5V19M19 10.5V19"/><path d="M2.5 19.5h19"/></svg>
+      <span>銀行</span>
+    </button>
+  </div>
+
+  <!-- ========== 詳細 ========== -->
+  <div class="layer" id="detailLayer">
+    <div class="navbar">
+      <button class="txt-btn back-btn" id="detailBack">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <span id="detailBackLabel">一覧</span>
+      </button>
+      <span class="title" id="detailTitle">詳細</span>
+      <button class="txt-btn" id="detailEdit">編集</button>
+    </div>
+    <div class="scroll" id="detailScroll"></div>
+  </div>
+
+  <!-- ========== 編集 ========== -->
+  <div class="layer modal" id="editLayer">
+    <div class="navbar">
+      <button class="txt-btn" id="editCancel">キャンセル</button>
+      <span class="title" id="editTitle">新規</span>
+      <button class="txt-btn strong" id="editSave">保存</button>
+    </div>
+    <div class="scroll" id="editScroll"></div>
+  </div>
+
+  <!-- ========== 設定 ========== -->
+  <div class="layer modal" id="settingsLayer">
+    <div class="navbar">
+      <span style="width:40px;"></span>
+      <span class="title">設定</span>
+      <button class="txt-btn" id="settingsClose">完了</button>
+    </div>
+    <div class="scroll">
+      <div class="grp-title" style="margin-top:4px;">打順</div>
+      <div class="grp">
+        <div class="field"><label>チーム名</label><input id="teamInput" placeholder="MY WALLET" maxlength="24" /></div>
+      </div>
+      <div class="grp-title">データ</div>
+      <div class="grp">
+        <button class="row action" id="btnExport">JSONを書き出す</button>
+        <button class="row action" id="btnImport">JSONを取り込む</button>
+      </div>
+      <div class="grp-title">このアプリについて</div>
+      <div class="grp">
+        <div class="row"><span class="k">保存先</span><span class="v">この端末（IndexedDB）</span></div>
+        <div class="row"><span class="k">バージョン</span><span class="v" id="versionLabel">v1.0.0</span></div>
+      </div>
+      <p style="font-size:12px; color:var(--tertiary); line-height:1.75; padding:16px 6px 0;">
+        Moneta は端末内にだけ保存します。書き出したJSONを iCloud Drive 経由で渡せば、別の端末に取り込めます（同じIDは新しい方を採用）。<br>
+        カード番号は末尾4桁だけを記録する設計です。全桁や暗証番号は入れないでください。
+      </p>
+      <input type="file" id="fileInput" accept="application/json,.json" style="display:none" />
+    </div>
+  </div>
+
+</div>
+
+<div class="sheet-bg" id="sheetBg">
+  <div class="sheet">
+    <div class="sheet-body"><h3 id="sheetTitle"></h3><p id="sheetMsg"></p></div>
+    <div class="sheet-acts">
+      <button id="sheetNo">キャンセル</button>
+      <button id="sheetYes" class="danger">削除</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- バージョン ----------
+  const APP_VERSION = '1.4.0';
+
+  // ---------- IndexedDB（DB名は不変） ----------
+  const DB_NAME = 'moneta-db';
+  const DB_VERSION = 1;
+  const STORES = ['cards', 'banks'];
+  const SCHEMA = 'moneta.v1';
+  let _db = null;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        for (const s of STORES) if (!db.objectStoreNames.contains(s)) db.createObjectStore(s, { keyPath: 'id' });
+      };
+      req.onsuccess = () => { _db = req.result; resolve(_db); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+  const tx = (s, m = 'readonly') => _db.transaction(s, m).objectStore(s);
+  const getAll = (s) => new Promise((res, rej) => { const r = tx(s).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const put = (s, v) => new Promise((res, rej) => { const r = tx(s, 'readwrite').put(v); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+  const del = (s, id) => new Promise((res, rej) => { const r = tx(s, 'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+
+  // ---------- 券面カラー ----------
+  const PALETTE = [
+    { id: 'black',    name: 'ブラック',     c1: '#3A3A3E', c2: '#131316', light: false },
+    { id: 'graphite', name: 'グラファイト', c1: '#6A7078', c2: '#2E3238', light: false },
+    { id: 'navy',     name: 'ネイビー',     c1: '#33497A', c2: '#111C38', light: false },
+    { id: 'blue',     name: 'ブルー',       c1: '#3D8BEF', c2: '#1A4EA8', light: false },
+    { id: 'sky',      name: 'スカイ',       c1: '#5FD0F5', c2: '#2A93D4', light: false },
+    { id: 'teal',     name: 'ティール',     c1: '#2FBFA8', c2: '#0C7264', light: false },
+    { id: 'green',    name: 'グリーン',     c1: '#57BC79', c2: '#1D7541', light: false },
+    { id: 'forest',   name: 'フォレスト',   c1: '#31805D', c2: '#0F3C2C', light: false },
+    { id: 'olive',    name: 'オリーブ',     c1: '#9BA85C', c2: '#5A6329', light: false },
+    { id: 'gold',     name: 'ゴールド',     c1: '#EDD285', c2: '#A57C1F', light: true  },
+    { id: 'bronze',   name: 'ブロンズ',     c1: '#CFA271', c2: '#875733', light: false },
+    { id: 'silver',   name: 'シルバー',     c1: '#E6E9EE', c2: '#A5ADB7', light: true  },
+    { id: 'white',    name: 'ホワイト',     c1: '#FFFFFF', c2: '#DCE0E6', light: true  },
+    { id: 'red',      name: 'レッド',       c1: '#EE5D5D', c2: '#A31A1A', light: false },
+    { id: 'rose',     name: 'ローズ',       c1: '#EC90A5', c2: '#B03D5C', light: false },
+    { id: 'orange',   name: 'オレンジ',     c1: '#F5A054', c2: '#C05712', light: false },
+    { id: 'purple',   name: 'パープル',     c1: '#A45FE4', c2: '#57289A', light: false },
+    { id: 'plum',     name: 'プラム',       c1: '#7B5EA7', c2: '#3B2560', light: false },
+    { id: 'indigo',   name: 'インディゴ',   c1: '#5C6BC0', c2: '#26307A', light: false },
+    { id: 'sand',     name: 'サンド',       c1: '#F0E2C8', c2: '#C6AC80', light: true  },
+    { id: 'mint',     name: 'ミント',       c1: '#A8E6CF', c2: '#4FA88A', light: true  },
+    { id: 'pink',     name: 'ピンク',       c1: '#F7A8C4', c2: '#D14C86', light: false },
+    { id: 'cocoa',    name: 'ココア',       c1: '#8C6650', c2: '#4A3227', light: false },
+    { id: 'ink',      name: 'インク',       c1: '#26343F', c2: '#0B1116', light: false },
+  ];
+  const paletteOf = (id) => PALETTE.find((p) => p.id === id) || PALETTE[0];
+
+  const BRANDS = ['VISA', 'Mastercard', 'JCB', 'AMEX', 'Diners', 'UnionPay', 'その他'];
+  const RANKS = [
+    { id: 'main', name: 'メイン' },
+    { id: 'sub', name: 'サブ' },
+    { id: 'rest', name: '休眠' },
+  ];
+  const ACCOUNT_TYPES = ['普通', '貯蓄', '定期', '外貨', 'その他'];
+  const BANK_ROLES = ['給与', '生活費', '引落', '貯蓄', '投資', '予備'];
+  const POSITIONS = [
+    { id: 'p',  short: '投',  name: 'ピッチャー' },
+    { id: 'c',  short: '捕',  name: 'キャッチャー' },
+    { id: '1b', short: '一',  name: 'ファースト' },
+    { id: '2b', short: '二',  name: 'セカンド' },
+    { id: '3b', short: '三',  name: 'サード' },
+    { id: 'ss', short: '遊',  name: 'ショート' },
+    { id: 'lf', short: '左',  name: 'レフト' },
+    { id: 'cf', short: '中',  name: 'センター' },
+    { id: 'rf', short: '右',  name: 'ライト' },
+    { id: 'dh', short: 'DH', name: '指名打者' },
+  ];
+  const posOf = (id) => POSITIONS.find((p) => p.id === id);
+  const STAT_KEYS = [
+    { id: 'ret',   name: '還元' },
+    { id: 'perk',  name: '特典' },
+    { id: 'range', name: '汎用' },
+    { id: 'cost',  name: '維持' },
+    { id: 'look',  name: '券面' },
+  ];
+  const GRADES = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const GRADE_COLOR = { S: '#FFB020', A: '#E8455C', B: '#F28C28', C: '#EFD03A', D: '#4CAF50', E: '#3D8BEF', F: '#A05BD6', G: '#9AA0A6' };
+  const gradeOf = (o, k) => (o.stats && GRADES.includes(o.stats[k])) ? o.stats[k] : '';
+  const hasStats = (o) => STAT_KEYS.some((k) => gradeOf(o, k.id));
+
+  const LS_VIEW = 'moneta.cardView';
+  const LS_TEAM = 'moneta.team';
+  const LS_DH = 'moneta.dh';
+  const teamName = () => localStorage.getItem(LS_TEAM) || 'MY WALLET';
+  const dhOn = () => localStorage.getItem(LS_DH) !== '0';
+  const FIELD_XY = {
+    p: [180, 240], c: [180, 338], '1b': [274, 230], '2b': [222, 172], '3b': [86, 230],
+    ss: [138, 172], lf: [78, 112], cf: [180, 72], rf: [282, 112], dh: [44, 328],
+  };
+
+  const PAY_MONTHS = [
+    { id: 'same', name: '当月' },
+    { id: 'next', name: '翌月' },
+    { id: 'next2', name: '翌々月' },
+  ];
+  const dayLabel = (d) => (d === 'end' ? '末日' : d ? d + '日' : '');
+
+  // ---------- State ----------
+  const state = { tab: 'card', cardView: 'face', cards: [], banks: [], detail: null, editing: null, editKind: 'card' };
+
+  async function loadAll() {
+    state.cards = await getAll('cards');
+    state.banks = await getAll('banks');
+  }
+
+  const rankOrder = (r) => ({ main: 0, sub: 1, rest: 2 }[r] ?? 1);
+  function sortedCards() {
+    return [...state.cards].sort((a, b) =>
+      (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) ||
+      rankOrder(a.rank) - rankOrder(b.rank) ||
+      (a.createdAt || 0) - (b.createdAt || 0));
+  }
+  function sortedBanks() {
+    return [...state.banks].sort((a, b) =>
+      (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0) ||
+      (a.createdAt || 0) - (b.createdAt || 0));
+  }
+
+  // ---------- 券面HTML ----------
+  function faceHTML(o, kind, big) {
+    const p = paletteOf(o.color);
+    const ink = p.light ? '#1E2126' : '#FFFFFF';
+    const cls = 'cardface' + (p.light ? ' light' : '');
+    const style = `--c1:${p.c1};--c2:${p.c2};--cink:${ink}` + (big ? ';border-radius:16px' : '');
+    if (kind === 'card') {
+      const rank = RANKS.find((r) => r.id === o.rank);
+      const brandCls = /^(VISA|Diners)$/.test(o.brand || '') ? 'cf-brand' : 'cf-brand plain';
+      return `<div class="${cls}" style="${style}">
+        <div class="cf-row">
+          <span class="cf-issuer">${esc(o.issuer || '')}</span>
+          ${rank && rank.id !== 'sub' ? `<span class="cf-tag">${rank.name}</span>` : ''}
+        </div>
+        <div class="cf-mid"><div class="cf-chip"></div><div class="cf-name">${esc(o.name || '（無題）')}</div></div>
+        <div class="cf-bottom">
+          <span class="cf-num">${o.last4 ? '•••• ' + esc(o.last4) : ''}</span>
+          <span class="${brandCls}">${esc(o.brand || '')}</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="${cls}" style="${style}">
+      <div class="cf-row">
+        <span class="cf-issuer">${esc(o.branch || '')}</span>
+        ${o.role ? `<span class="cf-tag">${esc(o.role)}</span>` : ''}
+      </div>
+      <div class="cf-mid"><div class="cf-chip"></div><div class="cf-name">${esc(o.name || '（無題）')}</div></div>
+      <div class="cf-bottom">
+        <span class="cf-num">${o.last4 ? '•••• ' + esc(o.last4) : ''}</span>
+        <span class="cf-brand plain">${esc(o.type || '')}</span>
+      </div>
+    </div>`;
+  }
+
+  // ---------- 一覧 ----------
+  function statsMini(o) {
+    if (!hasStats(o)) return '';
+    return `<span class="lu-stats">` + STAT_KEYS.map((k) => {
+      const g = gradeOf(o, k.id);
+      return g ? `<b style="color:${GRADE_COLOR[g]}">${g}</b>` : `<b class="none">-</b>`;
+    }).join('') + `</span>`;
+  }
+  function statsBoard(o) {
+    if (!hasStats(o)) return '';
+    return `<div class="stat-board">` + STAT_KEYS.map((k) => {
+      const g = gradeOf(o, k.id);
+      return `<div class="stat"><span class="stat-k">${k.name}</span>${g
+        ? `<span class="stat-g" style="color:${GRADE_COLOR[g]}">${g}</span>`
+        : `<span class="stat-g none">–</span>`}</div>`;
+    }).join('') + `</div>`;
+  }
+
+  function luRow(o, no) {
+    const p = paletteOf(o.color);
+    const pos = posOf(o.pos);
+    return `<button class="lu-row" data-open="${o.id}">
+      <span class="lu-no${no ? '' : ' none'}">${no ? no + '<small>番</small>' : '—'}</span>
+      <span class="lu-pos${pos ? '' : ' empty'}">${pos ? pos.short : ''}</span>
+      <span class="lu-body">
+        <span class="lu-name">${esc(o.name)}</span>
+        <span class="lu-sub">${esc([pos ? pos.name : '', o.issuer].filter(Boolean).join(' · '))}</span>
+      </span>
+      ${statsMini(o)}
+      <span class="lu-bar" style="--c1:${p.c1};--c2:${p.c2}"></span>
+    </button>`;
+  }
+
+  function lineupHTML(items) {
+    const starters = items.filter((c) => c.order).sort((a, b) => Number(a.order) - Number(b.order));
+    const rest = items.filter((c) => !c.order);
+    const bench = rest.filter((c) => c.rank !== 'rest');
+    const farm = rest.filter((c) => c.rank === 'rest');
+    let h = `<div class="lu-panel">
+      <div class="lu-head"><b>STARTING LINEUP</b><span>${esc(teamName())}</span></div>
+      ${starters.length ? starters.map((c) => luRow(c, c.order)).join('')
+        : `<div class="lu-note">まだ打順がありません。カードを編集して打順と守備位置を決めると、ここにスタメンが並びます。</div>`}
+    </div>`;
+    if (bench.length) h += `<div class="lu-panel"><div class="lu-head"><b>BENCH</b><span>控え</span></div>${bench.map((c) => luRow(c, null)).join('')}</div>`;
+    if (farm.length) h += `<div class="lu-panel"><div class="lu-head"><b>FARM</b><span>二軍</span></div>${farm.map((c) => luRow(c, null)).join('')}</div>`;
+    return h;
+  }
+
+  function fieldHTML(items) {
+    const dh = dhOn();
+    const slots = POSITIONS.filter((p) => dh || p.id !== 'dh');
+    const active = items.filter((c) => c.rank !== 'rest')
+      .sort((a, b) => (Number(a.order) || 99) - (Number(b.order) || 99));
+    const byPos = {};
+    for (const c of active) if (c.pos && FIELD_XY[c.pos] && !byPos[c.pos] && (dh || c.pos !== 'dh')) byPos[c.pos] = c;
+    const placed = new Set(Object.values(byPos).map((c) => c.id));
+    const bench = active.filter((c) => !placed.has(c.id));
+    const farm = items.filter((c) => c.rank === 'rest');
+
+    const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n) + '…' : s; };
+    let defs = '', nodes = '';
+    for (const p of slots) {
+      const [x, y] = FIELD_XY[p.id];
+      const c = byPos[p.id];
+      if (c) {
+        const pal = paletteOf(c.color);
+        const ink = pal.light ? '#1E2126' : '#FFFFFF';
+        defs += `<linearGradient id="fg_${c.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${pal.c1}"/><stop offset="1" stop-color="${pal.c2}"/></linearGradient>`;
+        nodes += `<g class="fnode" data-open="${c.id}" transform="translate(${x} ${y})">
+          <circle r="17" fill="url(#fg_${c.id})" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
+          <text y="4" font-size="${p.id === 'dh' ? 9.5 : 11}" font-weight="700" fill="${ink}" text-anchor="middle">${p.short}</text>
+          ${c.order ? `<circle cx="14" cy="-13" r="8" fill="#F2C94C"/><text x="14" y="-9.6" font-size="9.5" font-weight="700" fill="#14432F" text-anchor="middle">${c.order}</text>` : ''}
+          <text y="31" font-size="8.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">${esc(clip(c.name, /^(2b|ss|p)$/.test(p.id) ? 9 : 10))}</text>
+        </g>`;
+      } else {
+        nodes += `<g transform="translate(${x} ${y})">
+          <circle r="17" fill="rgba(0,0,0,0.22)" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="3 2.5"/>
+          <text y="4" font-size="${p.id === 'dh' ? 9.5 : 11}" font-weight="600" fill="rgba(255,255,255,0.45)" text-anchor="middle">${p.short}</text>
+        </g>`;
+      }
+    }
+    const svg = `<svg class="field-svg" viewBox="0 34 360 344" xmlns="http://www.w3.org/2000/svg">
+      <defs>${defs}</defs>
+      <path d="M180 310 L3 133 A250 250 0 0 1 357 133 Z" fill="#1F6B45"/>
+      <path d="M180 310 L88 218 A130 130 0 0 1 272 218 Z" fill="#8B5E3C"/>
+      <path d="M180 292 L232 240 L180 188 L128 240 Z" fill="#2A7D52"/>
+      <path d="M180 310 L3 133 M180 310 L357 133" stroke="rgba(255,255,255,0.75)" stroke-width="1.5" fill="none"/>
+      <path d="M180 310 L250 240 L180 170 L110 240 Z" stroke="rgba(255,255,255,0.35)" stroke-width="1" fill="none"/>
+      <rect x="-5" y="-5" width="10" height="10" transform="translate(250 240) rotate(45)" fill="#FFFFFF"/>
+      <rect x="-5" y="-5" width="10" height="10" transform="translate(180 170) rotate(45)" fill="#FFFFFF"/>
+      <rect x="-5" y="-5" width="10" height="10" transform="translate(110 240) rotate(45)" fill="#FFFFFF"/>
+      <polygon points="174,305 186,305 186,311 180,317 174,311" fill="#FFFFFF"/>
+      <circle cx="180" cy="240" r="11" fill="#A2724B"/>
+      ${nodes}
+    </svg>`;
+
+    let h = `<div class="lu-panel">
+      <div class="lu-head"><b>FIELD</b><span class="team">${esc(teamName())}</span><button class="dh-toggle${dh ? ' on' : ''}" id="dhToggle">DH制</button></div>
+      <div style="padding:8px 6px 4px;">${svg}</div>
+    </div>`;
+    if (bench.length) h += `<div class="lu-panel"><div class="lu-head"><b>BENCH</b><span>配置外</span></div>${bench.map((c) => luRow(c, c.order || null)).join('')}</div>`;
+    if (farm.length) h += `<div class="lu-panel"><div class="lu-head"><b>FARM</b><span>二軍</span></div>${farm.map((c) => luRow(c, null)).join('')}</div>`;
+    return h;
+  }
+
+  function renderList() {
+    const isCard = state.tab === 'card';
+    $('#mainTitle').textContent = isCard ? 'クレジットカード' : '銀行口座';
+    $('#tabCard').classList.toggle('on', isCard);
+    $('#tabBank').classList.toggle('on', !isCard);
+
+    const items = isCard ? sortedCards() : sortedBanks();
+    const el = $('#listScroll');
+
+    if (!items.length) {
+      el.innerHTML = `<div class="empty">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;">
+          ${isCard ? '<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>'
+                   : '<path d="M3 10.5 12 4l9 6.5"/><path d="M5 10.5V19M9.7 10.5V19M14.3 10.5V19M19 10.5V19"/><path d="M2.5 19.5h19"/>'}
+        </svg>
+        <p>まだ${isCard ? 'カード' : '口座'}がありません。<br>右上の ＋ から登録できます。</p>
+      </div>`;
+      return;
+    }
+
+    const head = isCard ? `<div class="seg top">
+        <button data-view="face" class="${state.cardView === 'face' ? 'on' : ''}">券面</button>
+        <button data-view="lineup" class="${state.cardView === 'lineup' ? 'on' : ''}">打順</button>
+        <button data-view="field" class="${state.cardView === 'field' ? 'on' : ''}">守備</button>
+      </div>` : '';
+
+    if (isCard && state.cardView === 'lineup') {
+      el.innerHTML = head + lineupHTML(items);
+    } else if (isCard && state.cardView === 'field') {
+      el.innerHTML = head + fieldHTML(items);
+      const t = el.querySelector('#dhToggle');
+      if (t) t.addEventListener('click', () => {
+        localStorage.setItem(LS_DH, dhOn() ? '0' : '1');
+        const y = el.scrollTop; renderList(); el.scrollTop = y;
+      });
+    } else {
+      el.innerHTML = head + items.map((o) => {
+        const sub = (o.favorite ? '<span class="fav">★</span>' : '')
+          + (o.tagline ? `<span>${esc(o.tagline)}</span>` : '');
+        return `<button class="card-tile${o.rank === 'rest' ? ' dim' : ''}" data-open="${o.id}">
+          ${faceHTML(o, state.tab)}
+          ${sub ? `<div class="tile-sub">${sub}</div>` : ''}
+        </button>`;
+      }).join('');
+    }
+
+    el.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
+      state.cardView = b.dataset.view;
+      localStorage.setItem(LS_VIEW, state.cardView);
+      renderList(); el.scrollTop = 0;
+    }));
+
+    el.querySelectorAll('[data-open]').forEach((b) => {
+      b.addEventListener('click', () => openDetail(state.tab, b.dataset.open));
+    });
+  }
+
+  // ---------- 詳細 ----------
+  const rowHTML = (k, v, sub) => v == null || v === '' ? '' :
+    `<div class="row"><span class="k">${esc(k)}</span><span class="v">${esc(v)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></div>`;
+
+  const CHEV = `<svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`;
+
+  const lines = (t) => String(t == null ? '' : t).split('\n').map((s) => s.trim()).filter(Boolean);
+  function bulletsHTML(text, type) {
+    const ls = lines(text);
+    if (!ls.length) return '';
+    const m = `<span class="mark ${type}">${type === 'warn' ? '△' : '○'}</span>`;
+    return `<div class="grp">` + ls.map((l) => `<div class="bullet">${m}<span>${esc(l)}</span></div>`).join('') + `</div>`;
+  }
+  const dataBlock = (rows) => `<details class="data" style="margin-top:26px;">
+    <summary><span class="lbl-o">データを見る</span><span class="lbl-c">データを閉じる</span></summary>${rows}</details>`;
+
+  function openDetail(kind, id) {
+    const list = kind === 'card' ? state.cards : state.banks;
+    const o = list.find((x) => x.id === id);
+    if (!o) return;
+    state.detail = { kind, id };
+    if (state.tab !== kind) { state.tab = kind; renderList(); }
+    $('#detailTitle').textContent = o.name || '詳細';
+    $('#detailBackLabel').textContent = kind === 'card' ? 'クレカ' : '銀行';
+    renderDetail();
+    $('#detailLayer').classList.add('on');
+    $('#detailScroll').scrollTop = 0;
+  }
+
+  function renderDetail() {
+    if (!state.detail) return;
+    const { kind, id } = state.detail;
+    const list = kind === 'card' ? state.cards : state.banks;
+    const o = list.find((x) => x.id === id);
+    if (!o) { closeDetail(); return; }
+    $('#detailTitle').textContent = o.name || '詳細';
+
+    let h = `<div class="preview-wrap">${faceHTML(o, kind, true)}</div>`;
+    if (kind === 'card' && (o.order || o.pos)) {
+      const pos = posOf(o.pos);
+      h += `<div class="order-badge">${[o.order ? o.order + '番' : '', pos ? pos.name : ''].filter(Boolean).join('　')}</div>`;
+    }
+    if (kind === 'card') h += statsBoard(o);
+    h += o.tagline
+      ? `<div class="tagline">${esc(o.tagline)}</div>`
+      : `<div class="tagline none">ひとことを書くと、ここと一覧に出ます</div>`;
+
+    const reasons = bulletsHTML(o.reasons, 'good');
+    if (reasons) h += `<div class="grp-title">決め手</div>${reasons}`;
+    if (o.useCase) h += `<div class="grp-title">使いどころ</div><div class="prose">${esc(o.useCase)}</div>`;
+    const cautions = bulletsHTML(o.cautions, 'warn');
+    if (cautions) h += `<div class="grp-title">気をつける点</div>${cautions}`;
+
+    if (kind === 'card') {
+      const bank = state.banks.find((b) => b.id === o.bankId);
+      if (bank) {
+        const p = paletteOf(bank.color);
+        h += `<div class="grp-title">引落口座</div><div class="grp">
+          <button class="row" data-goto-bank="${bank.id}">
+            <span class="linkrow" style="flex:1;min-width:0;">
+              <span class="swatch-mini" style="--c1:${p.c1};--c2:${p.c2}"></span>
+              <span style="font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bank.name)}</span>
+            </span>${CHEV}
+          </button></div>`;
+      }
+      let d = rowHTML('ブランド', o.brand) + rowHTML('発行会社', o.issuer)
+        + rowHTML('番号末尾', o.last4 ? '•••• ' + o.last4 : '')
+        + rowHTML('区分', (RANKS.find((r) => r.id === o.rank) || {}).name)
+        + rowHTML('保有開始', o.since);
+      if (o.annualFee != null && o.annualFee !== '')
+        d += rowHTML('年会費', Number(o.annualFee) === 0 ? '無料' : Number(o.annualFee).toLocaleString() + ' 円', o.feeNote);
+      else if (o.feeNote) d += rowHTML('年会費', o.feeNote);
+      if (o.baseRate) d += rowHTML('基本還元率', o.baseRate + ' %');
+      d += rowHTML('ポイント', o.pointName);
+      d += rowHTML('締め日', dayLabel(o.closingDay));
+      if (o.payDay) d += rowHTML('支払日', (PAY_MONTHS.find((p) => p.id === o.payMonth) || PAY_MONTHS[1]).name + dayLabel(o.payDay));
+      if (d) h += dataBlock(d);
+    } else {
+      const linked = sortedCards().filter((c) => c.bankId === o.id);
+      if (linked.length) {
+        h += `<div class="grp-title">この口座から引き落とすカード</div><div class="grp">` + linked.map((c) => {
+          const p = paletteOf(c.color);
+          return `<button class="row" data-goto-card="${c.id}">
+            <span class="linkrow" style="flex:1;min-width:0;">
+              <span class="swatch-mini" style="--c1:${p.c1};--c2:${p.c2}"></span>
+              <span style="min-width:0;">
+                <span style="font-size:15px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name)}</span>
+                ${c.tagline ? `<small style="font-size:11.5px;color:var(--secondary);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.tagline)}</small>` : ''}
+              </span>
+            </span>${CHEV}
+          </button>`;
+        }).join('') + `</div>`;
+      }
+      let d = rowHTML('支店', o.branch) + rowHTML('口座種別', o.type)
+        + rowHTML('番号末尾', o.last4 ? '•••• ' + o.last4 : '')
+        + rowHTML('用途', o.role) + rowHTML('開設', o.since)
+        + rowHTML('ATM無料', o.atmFree) + rowHTML('振込無料', o.transferFree)
+        + rowHTML('優遇ステージ', o.stage);
+      if (d) h += dataBlock(d);
+    }
+
+    h += `<div class="grp" style="margin-top:26px;">
+      <button class="row action" id="btnFav">${o.favorite ? '★ お気に入りを外す' : '☆ お気に入りにする'}</button>
+      <button class="row danger" id="btnDelete">削除</button>
+    </div>`;
+
+    const el = $('#detailScroll');
+    el.innerHTML = h;
+    el.querySelectorAll('[data-goto-bank]').forEach((b) => b.addEventListener('click', () => openDetail('bank', b.dataset.gotoBank)));
+    el.querySelectorAll('[data-goto-card]').forEach((b) => b.addEventListener('click', () => openDetail('card', b.dataset.gotoCard)));
+    const fav = el.querySelector('#btnFav');
+    if (fav) fav.addEventListener('click', async () => {
+      o.favorite = !o.favorite; o.updatedAt = Date.now();
+      await put(kind === 'card' ? 'cards' : 'banks', o);
+      renderDetail(); renderList();
+      toast(o.favorite ? 'お気に入りに追加' : 'お気に入りを解除');
+    });
+    const dl = el.querySelector('#btnDelete');
+    if (dl) dl.addEventListener('click', () => {
+      confirmSheet('削除しますか？', (o.name || 'この項目') + ' を削除します。取り消せません。', async () => {
+        await del(kind === 'card' ? 'cards' : 'banks', o.id);
+        if (kind === 'bank') {
+          for (const c of state.cards.filter((c) => c.bankId === o.id)) {
+            c.bankId = ''; c.updatedAt = Date.now(); await put('cards', c);
+          }
+        }
+        await loadAll(); closeDetail(); renderList(); toast('削除しました');
+      });
+    });
+  }
+
+  function closeDetail() { $('#detailLayer').classList.remove('on'); state.detail = null; }
+
+  // ---------- 編集フォーム ----------
+  function swatchesHTML(sel) {
+    return `<div class="swatches">` + PALETTE.map((p) =>
+      `<button type="button" class="sw${p.id === sel ? ' on' : ''}" data-color="${p.id}" style="--c1:${p.c1};--c2:${p.c2}" aria-label="${p.name}"></button>`
+    ).join('') + `</div>`;
+  }
+  function segHTML(name, opts, sel) {
+    return `<div class="seg">` + opts.map((o) =>
+      `<button type="button" data-seg="${name}" data-val="${o.id}" class="${o.id === sel ? 'on' : ''}">${o.name}</button>`
+    ).join('') + `</div>`;
+  }
+  function dayOptions(sel) {
+    let s = `<option value="">—</option>`;
+    for (let i = 1; i <= 31; i++) s += `<option value="${i}"${String(sel) === String(i) ? ' selected' : ''}>${i}日</option>`;
+    s += `<option value="end"${sel === 'end' ? ' selected' : ''}>末日</option>`;
+    return s;
+  }
+  const selOptions = (arr, sel) => `<option value="">—</option>` + arr.map((v) =>
+    `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(v)}</option>`).join('');
+
+  function whyFieldsHTML(o, kind) {
+    const ph = kind === 'card' ? {
+      tag: 'コンビニと固定費はこれ',
+      why: '対象コンビニ・飲食でタッチ7%&#10;年100万円使えば年会費が永年無料&#10;国内の空港ラウンジが無料',
+      use: 'コンビニとマクドは必ずこれ。&#10;家賃・光熱費・サブスクの引き落としもここに集約。',
+      care: '100万円に届かないと翌年5,500円&#10;タッチ決済じゃないと7%にならない',
+    } : {
+      tag: '引き落としはここに集約',
+      why: 'ATMが月5回まで無料&#10;SBI証券に即時入金できる&#10;定額自動入金でお金が勝手に回る',
+      use: 'クレカの引き落としは全部この口座。&#10;毎月の生活費もここから出す。',
+      care: 'ランクが下がると無料回数が減る&#10;実店舗の窓口がない',
+    };
+    return `<div class="grp-title">ひとこと</div><div class="grp"><div class="field">
+        <input data-f="tagline" value="${esc(o.tagline)}" style="text-align:left;" placeholder="${ph.tag}" /></div></div>
+      <div class="grp-title">決め手（1行に1つ）</div><div class="grp"><div class="field col">
+        <textarea data-f="reasons" placeholder="${ph.why}">${esc(o.reasons)}</textarea></div></div>
+      <div class="grp-title">使いどころ</div><div class="grp"><div class="field col">
+        <textarea data-f="useCase" placeholder="${ph.use}">${esc(o.useCase)}</textarea></div></div>
+      <div class="grp-title">気をつける点（1行に1つ）</div><div class="grp"><div class="field col">
+        <textarea data-f="cautions" placeholder="${ph.care}">${esc(o.cautions)}</textarea></div></div>`;
+  }
+
+  function openEdit(kind, id) {
+    state.editKind = kind;
+    const list = kind === 'card' ? state.cards : state.banks;
+    const src = id ? list.find((x) => x.id === id) : null;
+    state.editing = src ? { ...src } : {
+      id: uid(), color: kind === 'card' ? 'navy' : 'teal',
+      rank: 'sub', payMonth: 'next', createdAt: Date.now(),
+    };
+    $('#editTitle').textContent = (src ? '編集' : '新規') + (kind === 'card' ? '・カード' : '・口座');
+    renderEdit();
+    $('#editLayer').classList.add('on');
+    $('#editScroll').scrollTop = 0;
+  }
+
+  function renderEdit() {
+    const o = state.editing, kind = state.editKind;
+    let h = `<div class="preview-wrap" id="editPreview">${faceHTML(o, kind, true)}</div>`;
+    h += `<div class="grp-title" style="margin-top:0;">券面カラー</div><div class="grp">${swatchesHTML(o.color)}</div>`;
+
+    if (kind === 'card') {
+      h += `<div class="grp-title">基本</div><div class="grp">
+        <div class="field"><label>カード名</label><input data-f="name" value="${esc(o.name)}" placeholder="ゴールド（NL）" /></div>
+        <div class="field"><label>発行会社</label><input data-f="issuer" value="${esc(o.issuer)}" placeholder="三井住友カード" /></div>
+        <div class="field"><label>ブランド</label><select data-f="brand">${selOptions(BRANDS, o.brand)}</select></div>
+        <div class="field"><label>番号末尾</label><input data-f="last4" value="${esc(o.last4)}" inputmode="numeric" maxlength="4" placeholder="1234" /></div>
+      </div>`;
+      h += whyFieldsHTML(o, kind);
+      h += `<div class="grp-title">区分</div><div class="grp">${segHTML('rank', RANKS, o.rank || 'sub')}</div>`;
+      const orderOpts = `<option value="">—</option>` + [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) =>
+        `<option value="${n}"${String(o.order) === String(n) ? ' selected' : ''}>${n}番</option>`).join('');
+      const posOpts = `<option value="">—</option>` + POSITIONS.map((p) =>
+        `<option value="${p.id}"${p.id === o.pos ? ' selected' : ''}>${p.name}</option>`).join('');
+      h += `<div class="grp-title">打順</div><div class="grp">
+        <div class="field"><label>打順</label><select data-f="order">${orderOpts}</select></div>
+        <div class="field"><label>守備位置</label><select data-f="pos">${posOpts}</select></div>
+      </div>`;
+      h += `<div class="grp-title">能力</div><div class="grp">` + STAT_KEYS.map((k) => {
+        const cur = gradeOf(o, k.id);
+        return `<div class="stat-edit"><span class="stat-lbl">${k.name}</span><div class="stat-seg">` +
+          GRADES.map((g) => `<button type="button" data-stat="${k.id}" data-g="${g}" class="${cur === g ? 'on' : ''}" style="--gc:${GRADE_COLOR[g]}">${g}</button>`).join('') +
+          `</div></div>`;
+      }).join('') + `</div>`;
+      const bankOpts = `<option value="">—</option>` + sortedBanks().map((b) =>
+        `<option value="${b.id}"${b.id === o.bankId ? ' selected' : ''}>${esc(b.name)}${b.branch ? ' / ' + esc(b.branch) : ''}</option>`).join('');
+      h += `<div class="grp-title">引落口座</div><div class="grp">
+        <div class="field"><label>口座</label><select data-f="bankId">${bankOpts}</select></div>
+      </div>`;
+      h += `<div class="grp-title">データ（畳まれて表示されます）</div><div class="grp">
+        <div class="field"><label>年会費</label><input data-f="annualFee" value="${esc(o.annualFee)}" inputmode="numeric" placeholder="0" /><span class="suffix">円</span></div>
+        <div class="field"><label>年会費メモ</label><input data-f="feeNote" value="${esc(o.feeNote)}" placeholder="年1回利用で無料" /></div>
+        <div class="field"><label>基本還元率</label><input data-f="baseRate" value="${esc(o.baseRate)}" inputmode="decimal" placeholder="0.5" /><span class="suffix">%</span></div>
+        <div class="field"><label>ポイント</label><input data-f="pointName" value="${esc(o.pointName)}" placeholder="Vポイント" /></div>
+        <div class="field"><label>保有開始</label><input data-f="since" value="${esc(o.since)}" placeholder="2023年4月" /></div>
+        <div class="field"><label>締め日</label><select data-f="closingDay">${dayOptions(o.closingDay)}</select></div>
+        <div class="field"><label>支払日</label><select data-f="payDay">${dayOptions(o.payDay)}</select></div>
+        ${segHTML('payMonth', PAY_MONTHS, o.payMonth || 'next')}
+      </div>`;
+    } else {
+      h += `<div class="grp-title">基本</div><div class="grp">
+        <div class="field"><label>銀行名</label><input data-f="name" value="${esc(o.name)}" placeholder="住信SBIネット銀行" /></div>
+        <div class="field"><label>支店</label><input data-f="branch" value="${esc(o.branch)}" placeholder="イチゴ支店" /></div>
+        <div class="field"><label>口座種別</label><select data-f="type">${selOptions(ACCOUNT_TYPES, o.type)}</select></div>
+        <div class="field"><label>番号末尾</label><input data-f="last4" value="${esc(o.last4)}" inputmode="numeric" maxlength="4" placeholder="1234" /></div>
+        <div class="field"><label>用途</label><select data-f="role">${selOptions(BANK_ROLES, o.role)}</select></div>
+      </div>`;
+      h += whyFieldsHTML(o, kind);
+      h += `<div class="grp-title">データ（畳まれて表示されます）</div><div class="grp">
+        <div class="field"><label>ATM無料</label><input data-f="atmFree" value="${esc(o.atmFree)}" placeholder="月5回" /></div>
+        <div class="field"><label>振込無料</label><input data-f="transferFree" value="${esc(o.transferFree)}" placeholder="月3回" /></div>
+        <div class="field"><label>優遇ステージ</label><input data-f="stage" value="${esc(o.stage)}" placeholder="ランク3" /></div>
+        <div class="field"><label>開設</label><input data-f="since" value="${esc(o.since)}" placeholder="2020年" /></div>
+      </div>`;
+    }
+
+    const el = $('#editScroll');
+    el.innerHTML = h;
+
+    el.querySelectorAll('[data-f]').forEach((inp) => {
+      const key = inp.dataset.f;
+      const ev = inp.tagName === 'SELECT' ? 'change' : 'input';
+      inp.addEventListener(ev, () => {
+        o[key] = inp.value;
+        if (['name', 'issuer', 'brand', 'last4', 'branch', 'type', 'role'].includes(key)) refreshPreview();
+      });
+    });
+    el.querySelectorAll('[data-color]').forEach((b) => b.addEventListener('click', () => {
+      o.color = b.dataset.color;
+      el.querySelectorAll('[data-color]').forEach((x) => x.classList.toggle('on', x === b));
+      refreshPreview();
+    }));
+    el.querySelectorAll('[data-stat]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.stat, g = b.dataset.g;
+      if (!o.stats) o.stats = {};
+      o.stats[k] = o.stats[k] === g ? '' : g;
+      el.querySelectorAll(`[data-stat="${k}"]`).forEach((x) => x.classList.toggle('on', x.dataset.g === o.stats[k]));
+    }));
+    el.querySelectorAll('[data-seg]').forEach((b) => b.addEventListener('click', () => {
+      const g = b.dataset.seg;
+      o[g] = b.dataset.val;
+      el.querySelectorAll(`[data-seg="${g}"]`).forEach((x) => x.classList.toggle('on', x === b));
+      if (g === 'rank') refreshPreview();
+    }));
+  }
+  function refreshPreview() {
+    const p = $('#editPreview');
+    if (p) p.innerHTML = faceHTML(state.editing, state.editKind, true);
+  }
+
+  async function saveEdit() {
+    const o = state.editing, kind = state.editKind;
+    if (!o.name || !o.name.trim()) { toast(kind === 'card' ? 'カード名を入れてください' : '銀行名を入れてください'); return; }
+    o.name = o.name.trim();
+    if (o.last4) o.last4 = String(o.last4).replace(/\D/g, '').slice(-4);
+    o.updatedAt = Date.now();
+    if (!o.createdAt) o.createdAt = Date.now();
+    await put(kind === 'card' ? 'cards' : 'banks', o);
+    await loadAll();
+    $('#editLayer').classList.remove('on');
+    renderList();
+    if (state.detail && state.detail.id === o.id) renderDetail();
+    toast('保存しました');
+  }
+
+  // ---------- 確認シート / トースト ----------
+  let _confirmCb = null;
+  function confirmSheet(title, msg, cb) {
+    $('#sheetTitle').textContent = title;
+    $('#sheetMsg').textContent = msg;
+    _confirmCb = cb;
+    $('#sheetBg').classList.add('on');
+  }
+  $('#sheetNo').addEventListener('click', () => { $('#sheetBg').classList.remove('on'); _confirmCb = null; });
+  $('#sheetYes').addEventListener('click', () => {
+    $('#sheetBg').classList.remove('on');
+    const cb = _confirmCb; _confirmCb = null;
+    if (cb) cb();
+  });
+  let _toastT = null;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(_toastT);
+    _toastT = setTimeout(() => t.classList.remove('on'), 1700);
+  }
+
+  // ---------- 書き出し / 取り込み ----------
+  async function exportData() {
+    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), cards: state.cards, banks: state.banks };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    a.href = url; a.download = `moneta-${stamp}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('書き出しました');
+  }
+  async function importData(file) {
+    let data;
+    try { data = JSON.parse(await file.text()); } catch (e) { toast('読み込めませんでした'); return; }
+    if (data.schema !== SCHEMA) { toast('形式が違います'); return; }
+    let n = 0;
+    for (const [store, key] of [['cards', 'cards'], ['banks', 'banks']]) {
+      const localById = new Map(state[key].map((x) => [x.id, x]));
+      for (const it of (data[key] || [])) {
+        const local = localById.get(it.id);
+        if (!local || (it.updatedAt || 0) > (local.updatedAt || 0)) { await put(store, it); n++; }
+      }
+    }
+    await loadAll(); renderList();
+    if (state.detail) renderDetail();
+    toast(n ? `${n}件を取り込みました` : '更新はありません');
+  }
+
+  // ---------- バインド ----------
+  $('#tabCard').addEventListener('click', () => { state.tab = 'card'; renderList(); $('#listScroll').scrollTop = 0; });
+  $('#tabBank').addEventListener('click', () => { state.tab = 'bank'; renderList(); $('#listScroll').scrollTop = 0; });
+  $('#btnAdd').addEventListener('click', () => openEdit(state.tab, null));
+  $('#detailBack').addEventListener('click', closeDetail);
+  $('#detailEdit').addEventListener('click', () => { if (state.detail) openEdit(state.detail.kind, state.detail.id); });
+  $('#editCancel').addEventListener('click', () => { $('#editLayer').classList.remove('on'); });
+  $('#editSave').addEventListener('click', saveEdit);
+  $('#btnSettings').addEventListener('click', () => $('#settingsLayer').classList.add('on'));
+  $('#settingsClose').addEventListener('click', () => $('#settingsLayer').classList.remove('on'));
+  $('#btnExport').addEventListener('click', exportData);
+  $('#btnImport').addEventListener('click', () => $('#fileInput').click());
+  $('#fileInput').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (f) await importData(f);
+    e.target.value = '';
+  });
+
+  $('#teamInput').addEventListener('input', (e) => {
+    const v = e.target.value.trim();
+    if (v) localStorage.setItem(LS_TEAM, v); else localStorage.removeItem(LS_TEAM);
+    renderList();
+  });
+
+  // ---------- 起動 ----------
+  (async function init() {
+    setupViewportTracking();
+    state.cardView = ['lineup', 'field'].includes(localStorage.getItem(LS_VIEW)) ? localStorage.getItem(LS_VIEW) : 'face';
+    $('#teamInput').value = localStorage.getItem(LS_TEAM) || '';
+    await openDB();
+    await loadAll();
+    renderList();
+    $('#versionLabel').textContent = 'v' + APP_VERSION;
+  })();
+
+  // ---------- visualViewport ----------
+  function setupViewportTracking() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    let baseHeight = vv.height;
+    function apply() {
+      root.style.setProperty('--app-height', vv.height + 'px');
+      document.body.classList.toggle('keyboard-open', vv.height < baseHeight - 120);
+    }
+    vv.addEventListener('resize', apply);
+    vv.addEventListener('scroll', apply);
+    window.addEventListener('orientationchange', () => { setTimeout(() => { baseHeight = vv.height; apply(); }, 300); });
+    apply();
+  }
+
+  // ---------- Service Worker ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const swUrl = new URL('sw.js', location.href).href;
+        const res = await fetch(swUrl, { method: 'HEAD' });
+        if (!res.ok) return;
+        const reg = await navigator.serviceWorker.register('sw.js');
+        if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner(sw);
+          });
+        });
+        reg.update();
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update(); });
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return; refreshing = true; window.location.reload();
+        });
+      } catch (e) {}
+    });
+  }
+  function showUpdateBanner(waitingSW) {
+    if (document.getElementById('updateBanner')) return;
+    const b = document.createElement('button');
+    b.id = 'updateBanner';
+    b.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg><span>新しいバージョンがあります — タップで更新</span>';
+    b.addEventListener('click', () => {
+      b.disabled = true; b.querySelector('span').textContent = '更新中…';
+      waitingSW.postMessage('SKIP_WAITING');
+    });
+    document.body.appendChild(b);
+    requestAnimationFrame(() => b.classList.add('show'));
+  }
+</script>
+</body>
+</html>
