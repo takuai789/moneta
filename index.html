@@ -454,7 +454,7 @@
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---------- バージョン ----------
-  const APP_VERSION = '1.4.0';
+  const APP_VERSION = '1.5.0';
 
   // ---------- IndexedDB（DB名は不変） ----------
   const DB_NAME = 'moneta-db';
@@ -1095,17 +1095,30 @@
     _toastT = setTimeout(() => t.classList.remove('on'), 1700);
   }
 
+
+  // ---------- バックアップ（全アプリ共通の作法） ----------
+  // iPhone：共有メニュー →「"ファイル"に保存」→ iCloud Drive「アプリのバックアップ」フォルダ
+  // Mac：ダウンロード。ファイル名は「アプリ名_YYYY-MM-DD.json」でそろえる。
+  function bkName(app) { const d = new Date(); return `${app}_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.json`; }
+  async function bkSave(app, text) { // 戻り値 'ok' | 'cancel'
+    const name = bkName(app);
+    if (navigator.maxTouchPoints > 0) {
+      try {
+        const file = new File([text], name, { type: 'application/json' });
+        if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return 'ok'; }
+      } catch (e) { if (e && e.name === 'AbortError') return 'cancel'; }
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    return 'ok';
+  }
+
   // ---------- 書き出し / 取り込み ----------
   async function exportData() {
     const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), cards: state.cards, banks: state.banks };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const d = new Date();
-    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-    a.href = url; a.download = `moneta-${stamp}.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (await bkSave('Moneta', JSON.stringify(data, null, 2)) !== 'ok') return;
     toast('書き出しました');
   }
   async function importData(file) {
